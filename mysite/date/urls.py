@@ -1,6 +1,7 @@
 from django.urls import path
-from date.views import user_register
+from date.views import RegisterUserView, test_api
 
 urlpatterns = [
-    path('clients/create', user_register, name='register'),
+    path('clients/create', RegisterUserView.as_view(), name='register'),
+    path('login_test', test_api),
 ]
