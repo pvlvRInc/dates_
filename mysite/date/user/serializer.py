@@ -47,3 +47,9 @@ class UserMatchSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data, auth_user=None):
         auth_user.matches.add(instance)
+
+
+class UserFilterListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'gender')

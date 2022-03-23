@@ -1,16 +1,16 @@
+import django_filters
 from django.core.mail import send_mail
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from django.views.static import serve
-from rest_framework import status
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import status, filters
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.generics import CreateAPIView, UpdateAPIView, ListAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
+from date.filters import UserFilter
 from date.models import User
-from date.user.serializer import UserRegisterSerializer, UserMatchSerializer
-from mysite.settings import EMAIL_HOST_USER
+from date.user.serializer import UserRegisterSerializer, UserMatchSerializer, UserFilterListSerializer
 
 
 class RegisterUserView(CreateAPIView):
@@ -74,11 +74,12 @@ class MatchView(UpdateAPIView):
             data = serializer.errors
             return Response(data)
 
+
 class UserListView(ListAPIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [AllowAny]
-    serializer_class = UserMatchSerializer
-    queryset = User.objects.all()
+    serializer_class = UserFilterListSerializer
+    filter_backends = [DjangoFilterBackend]
+    queryset = User.objects.all().exclude(is_superuser=True)
+    filterset_class = UserFilter
 
-    def get(self, request, *args, **kwargs):
-        pass
