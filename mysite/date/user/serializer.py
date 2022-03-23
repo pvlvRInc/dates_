@@ -5,11 +5,14 @@ from date.models import User
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
+    photo = serializers.ImageField(required=True)
     password2 = serializers.CharField()
+    latitude = serializers.FloatField(min_value=-90, max_value=90)
+    longitude = serializers.FloatField(min_value=-180, max_value=180)
 
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'gender', 'email', 'photo', 'password', 'password2')
+        fields = ('username', 'first_name', 'last_name', 'gender', 'email', 'photo', 'latitude', 'longitude', 'password', 'password2')
 
     def save(self, **kwargs):
         user = User(
@@ -19,6 +22,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             email=self.validated_data['email'],
             photo=self.validated_data['photo'],
             gender=self.validated_data['gender'],
+            latitude=self.validated_data['latitude'],
+            longitude=self.validated_data['longitude'],
         )
 
         password = self.validated_data['password']
@@ -52,4 +57,4 @@ class UserMatchSerializer(serializers.ModelSerializer):
 class UserFilterListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'gender')
+        fields = ('first_name', 'last_name', 'gender', 'latitude', 'longitude')

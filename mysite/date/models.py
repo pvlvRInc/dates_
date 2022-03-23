@@ -21,6 +21,8 @@ class User(AbstractUser):
     )
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True)
     matches = models.ManyToManyField('self', blank=True, symmetrical=False)
+    longitude = models.FloatField()
+    latitude = models.FloatField()
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)

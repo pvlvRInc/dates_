@@ -1,8 +1,8 @@
-import django_filters
+
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status, filters
+from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.generics import CreateAPIView, UpdateAPIView, ListAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -80,6 +80,15 @@ class UserListView(ListAPIView):
     permission_classes = [AllowAny]
     serializer_class = UserFilterListSerializer
     filter_backends = [DjangoFilterBackend]
-    queryset = User.objects.all().exclude(is_superuser=True)
     filterset_class = UserFilter
 
+    def get_queryset(self):
+        user = self.request.user
+        return User.objects.all().exclude(is_superuser=True)
+
+    def get(self, request, *args, **kwargs):
+        from django.db import connection
+        response = super().get(request, *args, **kwargs)
+        print(connection.queries)
+        print(len(connection.queries))
+        return response
