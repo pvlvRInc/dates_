@@ -1,16 +1,16 @@
-from django.shortcuts import render
-
-# Create your views here.
-from django.views.decorators.csrf import csrf_exempt
+from django.core.mail import send_mail
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from django.views.static import serve
 from rest_framework import status
-from rest_framework.authtoken import views
-from rest_framework.decorators import api_view
-from rest_framework.generics import CreateAPIView
-from rest_framework.permissions import AllowAny
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.generics import CreateAPIView, UpdateAPIView, ListAPIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from date.models import User
-from date.user.serializer import UserRegisterSerializer
+from date.user.serializer import UserRegisterSerializer, UserMatchSerializer
+from mysite.settings import EMAIL_HOST_USER
 
 
 class RegisterUserView(CreateAPIView):
@@ -33,8 +33,52 @@ class RegisterUserView(CreateAPIView):
             return Response(data)
 
 
-@csrf_exempt
-@api_view(["GET"])
-def test_api(request):
-    data = {'response': 'login successfully'}
-    return Response(data, status=status.HTTP_200_OK)
+class MatchView(UpdateAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserMatchSerializer
+    queryset = User.objects.all()
+
+    def patch(self, request, *args, **kwargs):
+        serializer = UserMatchSerializer(data=request.data)
+
+        target_user_id = kwargs.pop('user_id')
+        target_user = get_object_or_404(User, pk=target_user_id)
+
+        auth_user = User.objects.get(username=request.user)
+
+        data = {}
+        if target_user == auth_user:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        if serializer.is_valid():
+            if serializer.validated_data['check'] == 'L':
+                serializer.update(target_user, serializer.validated_data, auth_user=request.user)
+                data['response'] = 'U liked person'
+                if auth_user in target_user.matches.all():
+                    mail = send_mail(
+                        'Новая симпатия',
+                        'У вас взаимная симпатия!',
+                        'qwertygdd123@rambler.ru',
+                        [target_user.email, auth_user.email],
+                        fail_silently=False,
+                    )
+                    if mail:
+                        data['mail'] = 'Check mail'
+            else:
+                data['response'] = 'U skipped person'
+
+            return Response(data, status=status.HTTP_200_OK)
+
+        else:
+            data = serializer.errors
+            return Response(data)
+
+class UserListView(ListAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [AllowAny]
+    serializer_class = UserMatchSerializer
+    queryset = User.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        pass

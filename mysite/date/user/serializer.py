@@ -32,3 +32,18 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         user.save()
 
         return user
+
+
+class UserMatchSerializer(serializers.ModelSerializer):
+    MATCH_CHOICES = (
+        ('L', 'Like'),
+        ('D', 'Dislike'),
+    )
+    check = serializers.ChoiceField(choices=MATCH_CHOICES)
+
+    class Meta:
+        model = User
+        fields = ('check',)
+
+    def update(self, instance, validated_data, auth_user=None):
+        auth_user.matches.add(instance)
